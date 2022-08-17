@@ -4,12 +4,19 @@
 namespace App\Helpers\GameHelper;
 
 
+use App\Helpers\ValidateHelper;
 use App\Models\Game;
 use App\Models\GameGenre;
 use App\Models\Genre;
 
 class UpdateGameHelper
 {
+    public $validateData;
+
+    public function __construct(){
+        $this->validateData = new ValidateHelper();
+    }
+
     public function gameUpdate($request, $id){
         $errors = [];
 
@@ -22,9 +29,9 @@ class UpdateGameHelper
             ];
         }
 
-        $gameTitle = $request->title;
-        $gameStudioDeveloper = $request->studio_developer;
-        $genres = $request->genres;
+        $gameTitle = $this->validateData->validateString($request->title);
+        $gameStudioDeveloper = $this->validateData->validateString($request->studio_developer);
+        $genres = $this->validateData->validateArrayNumber($request->genres);
 
         $searchGameTitle = Game::where("title", $gameTitle)->first();
         $searchGenres = Genre::whereIn("id", $genres)->get();
@@ -55,17 +62,32 @@ class UpdateGameHelper
             "genres" => [],
         ];
 
-        $searchGameGenresDelete = GameGenre::where("game_id", $game->id)->get();
+        $searchGameGenres = GameGenre::where("game_id", $game->id)->get();
 
-        foreach($searchGameGenresDelete as $gameGenre){
-            $gameGenre->delete();
+        $genreArr = [];
+        $genreGameArr = [];
+
+        foreach($searchGameGenres as $gameGenre){
+            $genreGameArr[] = $gameGenre->id;
         }
 
         foreach($searchGenres as $genre){
-            GameGenre::create([
-                "game_id" => $game->id,
-                "genre_id" => $genre->id,
-            ]);
+            $genreArr[] = $genre->id;
+        }
+
+        foreach($genreGameArr as $i => $gameGenre){
+            if(!array_search($gameGenre, $genreArr, true)){
+                $searchGameGenres[$i]->delete();
+            }
+        }
+
+        foreach($searchGenres as $i => $genre){
+            if(!array_search($genre->id, $genreGameArr, true)){
+                GameGenre::create([
+                    "game_id" => $game->id,
+                    "genre_id" => $genre->id,
+                ]);
+            }
 
             $gameView["genres"][] = [
                 "id" => $genre->id,

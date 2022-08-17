@@ -4,18 +4,25 @@
 namespace App\Helpers\GameHelper;
 
 
+use App\Helpers\ValidateHelper;
 use App\Models\Game;
 use App\Models\GameGenre;
 use App\Models\Genre;
 
 class CreateGameHelper
 {
+    public $validateData;
+
+    public function __construct(){
+        $this->validateData = new ValidateHelper();
+    }
+
     public function gameCreate($request){
         $errors = [];
 
-        $gameTitle = $request->title;
-        $gameStudioDeveloper = $request->studio_developer;
-        $genres = $request->genres;
+        $gameTitle = $this->validateData->validateString($request->title);
+        $gameStudioDeveloper = $this->validateData->validateString($request->studio_developer);
+        $genres = $this->validateData->validateArrayNumber($request->genres);
 
         $searchGameTitle = Game::where("title", $gameTitle)->first();
         $searchGenres = Genre::whereIn("id", $genres)->get();

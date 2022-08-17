@@ -4,14 +4,21 @@
 namespace App\Helpers\GenreHelper;
 
 
+use App\Helpers\ValidateHelper;
 use App\Models\Genre;
 
 class CreateGenreHelper
 {
+    public $validateData;
+
+    public function __construct(){
+        $this->validateData = new ValidateHelper();
+    }
+
     public function genreCreate($request){
         $errors = [];
 
-        $genreTitle = $request->title;
+        $genreTitle = $this->validateData->validateString($request->title);
 
         $searchGenreTitle = Genre::where("title", $genreTitle)->first();
 
